@@ -35,10 +35,8 @@ class PrimePrinter(object):
         @param y: An integer greater than 0
         """
         self._check_inputs(x, y)
-
-        inputs = [x, y]
-        inputs.sort()
-        y, x = inputs #Now think of x and y such that x is the larger of the two.
+        if y > x:
+            x, y = y, x
         
         x_prime_list = self._prime_sieve(x)
         prime_list = x_prime_list
@@ -50,10 +48,12 @@ class PrimePrinter(object):
         
 
     def _prime_sieve(self, x):
-        #This is the classic Sieve of Eratosthenes. There is an algorithm that
-        #works better for much larger numbers (10^9 +), but it is very difficult
-        #and we would be better of whipping out something like numpy or C
-        if x < 2:
+        """
+        This is the classic Sieve of Eratosthenes. There is an algorithm that
+        works better for much larger numbers (10^9 +), but it is very difficult
+        and we would be better of whipping out something like numpy or C
+        """
+	if x < 2:
             return []
         
         upperBound = int(math.sqrt(x)) +1
@@ -70,8 +70,8 @@ class PrimePrinter(object):
         return divisor_list
             
     def _check_inputs(self, x, y):
-        """
-            
+        """ 
+        Somehow this is less bad than doing it inline.
         """
         error_msg = 'Invalid parameter. Expected integer greater than 0.'
         for param in (x,y):

@@ -1,0 +1,25 @@
+Jessica Ross' portfolio
+
+By no means is this ever complete. If you see something that you think
+I could do better, please feel free to drop me a line at the email 
+address attached to the github you got this code from.
+
+Code Manifest:
+
+PYTHON:
+
+primeprinter.py
+primeprintertest.py
+-----
+
+I wrote this for an interview with a software company 
+that I'm not naming. It's generic enough that I can show it here. 
+
+It's mainly here for style purposes.
+
+urlgather.py
+urlgathertest.py
+-----
+
+This is a very, very primative web crawler.
+
