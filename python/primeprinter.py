@@ -40,7 +40,7 @@ class PrimePrinter(object):
         
         x_prime_list = self._prime_sieve(x)
         prime_list = x_prime_list
-        return_list = [p for p in [n for n in prime_list if n <= x ] if p >= y]
+        return_list = [n for n in prime_list if n <= x  and n >= y]
         return_list.sort()
         return return_list
        
