@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+{% block title %} Add Artwork {% endblock %}
+{% block sidebar %}
+<ul>
+	<li>Add New Artwork</li>
+	<li>View/Modify Artwork</li>
+	
+</ul>
+{% endblock %}
+{% block body %}
+{{ subtitle }}<br/>
+{{ errors }} <br/>
+<form method="post">
+{{ form.as_ul }}
+<p/>
+<input type="submit" value = "Add Model"/>
+</form>
+{% endblock %}
+
