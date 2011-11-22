@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+	<head>
+        <link href="{{ STATIC_URL }}css/sellmyart.css" rel="stylesheet" type="text/css" />
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
+		<title> {% block title %} This is the title {% endblock %}
+	
+	</head>
+	<body>
+	<div id="wrapper">
+		<div id="header">Buy My Stuff 
+	       </div>
+	  <div id="middle">
+		  <div id="container">
+			  <div id="content">{% block body %} Content goes here  {% endblock %}
+			  </div>
+	  	 </div>	
+		 <div id="sideLeft">
+		    {% block sidebar %} 
+			 <ul>
+				 <li> Sidebar goes here
+				 </li>
+           	         </ul>
+             	    {% endblock %}
+	        </div>
+	 </div>
+	 <div id="footer">
+		 {% block footer %}
+		 {% endblock %}
+	 </div>
+
+  	</body>
+</html>
