@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '/Volumes/IGOE/djangodb/sellmyartdb',                      # Or path to database file if using sqlite3.
+        'NAME': '/Users/Jess2/portfolio/python/sellmyart/djangodb/sellmyartdb',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -45,7 +45,7 @@ USE_L10N = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = '/Volumes/IGOE/python/sellmyart/media/'
+MEDIA_ROOT = '/Users/jess2/portfolio/python/sellmyart/media/'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
@@ -56,7 +56,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = '/Volumes/IGOE/python/sellmyart/static'
+STATIC_ROOT = '/Users/jess2/portfolio/python/sellmyart/static'
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -70,6 +70,9 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 # Additional locations of static files
 STATICFILES_DIRS = (
     	("css", "/Users/jess2/static/css"),
+	("images","/Users/jess2/static/images"),
+	("js","/Users/jess2/static/js"),
+	
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -104,7 +107,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'sellmyart.urls'
 
 TEMPLATE_DIRS = (
-    "/Volumes/IGOE/python/sellmyart/templates/",
+    "/Users/jess2/portfolio/python/sellmyart/templates/",
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -132,6 +135,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
      'django.contrib.admindocs',
      'manageart',
+     'register',
 
      )
 

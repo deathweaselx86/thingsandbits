@@ -1,2 +1,3 @@
 #Ignore files with ~ at the end
 *~
+*.pyc

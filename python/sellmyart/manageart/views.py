@@ -4,12 +4,16 @@
 
 # Create your views here.
 from django.http import HttpResponse
-from manageart.models import ArtModel
+from manageart.models import ArtModel, ArtModelForm
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 
-def index(request):
-    allArtModels = ArtModel.objects.all()[0]
-    template = loader.get_template('../templates/base_generic.html')
-    context = Context({'body': allArtModels,})
-    return render_to_response('../templates/base_generic.html', \
-                              'body': allArtModels,})
+def add_models(request):
+    errors = ''
+    if request.method == 'POST':
+        form = ArtModelForm(request.POST)
+        if form.is_valid():
+            new_art = form.save()
+    context = {'form':form, } # data goes here, eventually
+    return render_to_response('../templates/addartmodels.html', \
+            context_instance=RequestContext(request, context))

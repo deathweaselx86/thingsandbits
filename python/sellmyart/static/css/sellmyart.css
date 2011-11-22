@@ -12,7 +12,7 @@ table, caption, tbody, tfoot, thead, tr, th, td {
 	border: 0;
 	outline: 0;
 	font-size: 100%;
-	vertical-align: baseline;
+	vertical-align: text-bottom;
 	background: transparent;
 }
 ol, ul {
@@ -76,8 +76,8 @@ input {
 #header {
 	height: 150px;
 	background: #FFE680;
-	font-size: 12em;
-	vertical-align: central;
+	font-size: 10em;
+	vertical-align: sub;
 }
 
 
