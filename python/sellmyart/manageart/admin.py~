@@ -1,4 +1,0 @@
-from artimg.models import ArtModel
-from django.contrib import admin
-
-admin.site.register(ArtModel)
