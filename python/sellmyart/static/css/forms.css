@@ -1,0 +1,29 @@
+textarea, input  {
+	vertical-align: top;
+
+}
+
+label {
+	vertical-align:top;
+	float: left;	
+	text-align:left;
+}
+
+td #formLabel {
+		vertical-align:center;
+		text-align: left;	
+	    }
+
+td #formInput {
+		vertical-align: center;	
+		text-align: left;	
+	}
+input[type="file"]
+	{
+
+	}
+
+input[type="submit"]
+	{
+		float: right;
+	}
