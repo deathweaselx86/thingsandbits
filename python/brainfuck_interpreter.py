@@ -24,7 +24,7 @@ def bf_interpreter(bf_program):
     Please see http://programmingpraxis.com/2011/10/04/brainfuck
     for a full explanation of this problem. 
     """
-    datastore = array.array('B', (0 for i in xrange(300000)))
+    datastore = array.array('b', (0 for i in xrange(300000)))
     data_pointer = 0
     instruction_pointer = 0
 
@@ -39,12 +39,12 @@ def bf_interpreter(bf_program):
                 raise DatastoreUnderflow, "We have run off the beginning of the datastore. Please check the program and try again."
         elif bf_program[instruction_pointer] == '>':
             data_pointer = data_pointer + 1
-            if data_pointer > 3000000:
+            if data_pointer > 300000:
                 raise DatastoreOverflow, "We have run off the end of the datastore. Please check the program and try again."
         elif bf_program[instruction_pointer] == '+':
-            datastore[data_pointer] = (datastore[data_pointer] + 1) % 255
+            datastore[data_pointer] = datastore[data_pointer] + 1
         elif bf_program[instruction_pointer] == '-':
-            datastore[data_pointer] = (datastore[data_pointer] - 1) % 255
+            datastore[data_pointer] = datastore[data_pointer] - 1
         elif bf_program[instruction_pointer] == '.':
             output.append(chr(datastore[data_pointer]))
         elif bf_program[instruction_pointer] == ',':
@@ -57,12 +57,14 @@ def bf_interpreter(bf_program):
                 raise MismatchedBracketException, "Program is missing a right bracket. Please check the program and try again." 
         elif bf_program[instruction_pointer] == ']':
             try:
-                instruction_pointer = bf_program[:instruction_pointer].index('[') 
+                if datastore[data_pointer] != 0:
+                    instruction_pointer = bf_program[:instruction_pointer].index('[') 
             except ValueError:
                 raise MismatchedBracketException, "Program is missing a left bracket. Please check the program and try again." 
         else:
-            continue
+            pass    
         instruction_pointer = instruction_pointer + 1
+    del datastore
     return ''.join(output)
 
 
@@ -73,3 +75,4 @@ if __name__ == '__main__':
         bf_program = ''.join(bf_filehandler.readlines())
         bf_filehandler.close()
         print bf_interpreter(bf_program)
+  
