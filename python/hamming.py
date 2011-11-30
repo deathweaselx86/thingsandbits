@@ -2,6 +2,9 @@
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vim: fileencoding=utf-8 tabstop=4 expandtab shiftwidth=4
 
+class HammingInputException(Exception):
+    pass
+
 
 def hamming(count):
     """
@@ -15,14 +18,16 @@ def hamming(count):
     	Please see http://programmingpraxis.com/2011/08/30/hamming-numbers/
     	@input count: The number of Hamming numbers you want outputted.
     """
-    hammingSequence = [1]
-    hammingGenerator = ((2*ch,3*ch,5*ch) for ch in hammingSequence)
-    while len(hammingSequence) < count:
-        for n in hammingGenerator.next():
-			if n not in hammingSequence:
-				hammingSequence.append(n)
-	hammingSequence.sort()
-    return hammingSequence
+    if not isinstance(count,int) or count < 1:
+        raise HammingInputException, "Expected non-negative integer for length of sequence."
+    hamming_sequence = [1]
+    hamming_generator = ((2*ch,3*ch,5*ch) for ch in hamming_sequence)
+    while len(hamming_sequence) < count:
+        for n in hamming_generator.next():
+			if n not in hamming_sequence:
+				hamming_sequence.append(n)
+	hamming_sequence.sort()
+    return hamming_sequence
 
 
 if __name__ == '__main__':
