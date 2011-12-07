@@ -23,14 +23,8 @@ urlgathertest.py
 
 This is a very, very primative web crawler.
 
-sellmyart/*
-This is a directory containing the beginnings of a Django
-artwork ecommerce site. It's about time I put this in a
-code repository; something could conceivably happen to my
-USB keydrive any day now. Before now, I have worked on parts
-of Django sites, but never tried to build one from scratch before,
-including the CSS, etc.
-
+There are also some ProgrammingPraxis exercises here for
+good measure.
 
 XSLT:
 
