@@ -7,18 +7,17 @@ def sundaram(count):
     """
         This is an alternative prime sieve.
     """
-    primeList = range(count)
+    prime_list = range(count)
     i,j=1,1
     while i+j+2*i*j <= count:
-        for i in range(1, sqrt((float(count)-j)/2)):
+        for i in range(1, int(sqrt((float(count)-j)/2))):
             try:
-                primeList.remove(i+j+2*i*j)
+                prime_list.remove(i+j+2*i*j)
             except ValueError:
                 pass
-            print i,j,i+j+2*i*j, count
         j=j+1
 
-    primeList = [2*p+1 for p in primeList]
-    return primeList 
+    prime_list = [2*p+1 for p in prime_list]
+    return prime_list 
 if __name__ == '__main__':
 	print sundaram(20)
