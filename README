@@ -6,6 +6,18 @@ address attached to the github you got this code from.
 
 Code Manifest:
 
+C:
+
+shell-ross-2-1.c 
+-----
+This is a simple UNIX shell I wrote for an Operating Systems class 
+some time ago.
+
+cpre211labfinal.zip
+----
+This is a lab final for an embedded development class. It's a controller program for a piece of farm equipment. This is written in a combination of C and Assembly.
+
+ 
 PYTHON:
 
 primeprinter.py
@@ -25,6 +37,10 @@ This is a very, very primative web crawler.
 
 There are also some ProgrammingPraxis exercises here for
 good measure.
+
+RUBY:
+
+ProgrammingPraxis exercises.
 
 XSLT:
 
