@@ -125,7 +125,6 @@ int main(int argc, char** argv)
 					}
 					
 			break;
-			break;
 
 			case 5: 	ourcwd = getcwd(ourcwd,0);	
 					/* getcwd() called with a NULL
