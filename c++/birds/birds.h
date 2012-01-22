@@ -7,18 +7,25 @@
 #include <fstream>
 #include <algorithm>
 #include <ctime>
+#include <math.h>
 
 class Bird{
 	public:
 		Bird();
 		~Bird();
-		Bird(const Bird & aBird);
-		Bird & operator=(const Bird & aBird);
-		void revaluateZeros();                
-		void setBenefit(int benefit);
+		Bird(const Bird & bird);
+                Bird(const Bird & bird1, const Bird & bird2);
 		
+                static int getGeneLength();
+                
+                void evaluateZeros();
+		void setBenefit(int benefit);
+                int getNumberOfEggs();
+                void generateRandomGene();
+                
 	private:
-		int gene;
+                static int geneLength;
+                int gene;
                 int benefit;
 		int numberOfEggs;
 	 	int numberOfZeros;
@@ -29,22 +36,23 @@ class Bird{
 template <class T>
 class Population {
         public:
-                population();
-                ~population();
-                population(T & herd);
+                Population();
+                ~Population();
+                Population(T & herd);
             
         private:
                 T * herd;
                 double averageFitness;
 };
 
+template <class T>
 class Simulation {
     
         public:
                 Simulation();
                 ~Simulation();
                 Simulation(const Simulation & simulation);
-                Simulation(Population * herds);
+                Simulation(Population<T> * herds);
                 void setSeedAmount(int seedAmount=500);
                 void setFlowerAmount(int flowerAmount=500);
                 void setMaxPopulationSize(int maxPopulationSize=60);
@@ -55,7 +63,7 @@ class Simulation {
                 const void getCurrentPopulationSize();
                 
         private:
-                Population * herd;
+                Population<T> * herd;
                 int amountOfSeeds;
                 int amountOfFlowers;
                 int maximumPopulationSize;
