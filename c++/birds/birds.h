@@ -4,10 +4,13 @@
 //Read more: http://en.wikipedia.org/wiki/Darwin's_finches
 
 #include <iostream>
-#include <fstream>
-#include <algorithm>
 #include <ctime>
-#include <math.h>
+#include <cmath>
+#include <cstdlib>
+#include <string>
+#include <vector>
+
+using namespace std;
 
 class Bird{
 	public:
@@ -15,16 +18,16 @@ class Bird{
 		~Bird();
 		Bird(const Bird & bird);
                 Bird(const Bird & bird1, const Bird & bird2);
-		
-                static int getGeneLength();
                 
                 void evaluateZeros();
 		void setBenefit(int benefit);
-                int getNumberOfEggs();
+                int getNumberOfEggs() const;
+                void getGene(string & gene) const;
                 void generateRandomGene();
                 
+                friend ostream & operator<<(ostream & os, const Bird & bird);
+                
 	private:
-                static int geneLength;
                 int gene;
                 int benefit;
 		int numberOfEggs;
@@ -38,11 +41,17 @@ class Population {
         public:
                 Population();
                 ~Population();
-                Population(T & herd);
-            
+                Population(vector<T> herd);
+                void setInitialPopulationSize(int popSize);
+                int getCurrentPopulationSize() const;
+                
+                void evaluatePopulationBenefit();
+                vector<T> & getHerd();
+                
+                
         private:
-                T * herd;
-                double averageFitness;
+                vector<T> herd;
+                double averageBenefit;
 };
 
 template <class T>
@@ -57,8 +66,8 @@ class Simulation {
                 void setFlowerAmount(int flowerAmount=500);
                 void setMaxPopulationSize(int maxPopulationSize=60);
                 void setStartingPopulationSize(int startPopulationSize=15);
-                void setNumberOfGenerations(int generationNumber=100);
-                void seedRandomizer();
+                void setIterations(int iterations=100);
+                void randomizeSeed();
                 
                 const void getCurrentPopulationSize();
                 
@@ -69,6 +78,6 @@ class Simulation {
                 int maximumPopulationSize;
                 int startingPopulationSize;
                 int currentPopulationSize;
-                int numberOfGenerations;
+                int numberOfIterations;
 };
 #endif

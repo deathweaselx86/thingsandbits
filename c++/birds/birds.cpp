@@ -2,7 +2,6 @@
 
 using namespace std;
 
-const int geneLength = 20;
 const int maximumPopulationSize = 50;
 const int startingPopulationSize = 10;
 const int numberOfGenerations =  100;
@@ -13,10 +12,8 @@ const double eggNumberFactor = 100;
 //fitness
 
 
-//globals, because I hate passing vars
 
-int current_size = startingPopulationSize;
-
+using namespace std;
 
 Bird::Bird()
 {
@@ -26,6 +23,8 @@ Bird::Bird()
         benefit=0;
         numberOfEggs = 0;
 }
+
+Bird::~Bird(){}
 
 Bird::Bird(const Bird& bird)
 {
@@ -76,15 +75,6 @@ Bird::Bird(const Bird& bird1, const Bird& bird2)
     
 }
 
-void Bird::setBenefit(int benefit){
-    this->benefit = benefit;
-}
-
-int Bird::getNumberOfEggs(){
-    //This 60 number is an arbitrary egg factor.
-    return int(benefit/60);
-    
-}
 void Bird::evaluateZeros()
 {
         numberOfZeros=0;
@@ -96,9 +86,39 @@ void Bird::evaluateZeros()
        
 }
 
+inline void Bird::setBenefit(int benefit){
+    this->benefit = benefit;
+}
+
+inline int Bird::getNumberOfEggs() const{
+    //This 60 number is an arbitrary egg factor.
+    return int(benefit/60);
+    
+}
+
+void Bird::getGene(string & gene) const
+{
+    //I don't know of any way to print the genes out in
+    //binary. Hex will do, methinks.
+    int success;
+    char charGene[5];
+    success = sprintf(charGene, "%x", &gene);
+    
+    gene = string(charGene);
+}
+
 void Bird::generateRandomGene()
 {
     //I hope you called srand() first. 
     //Your population class should do this for you.
     gene = std::rand();
+}
+
+ostream & operator<<(ostream & os, const Bird & bird)
+{
+    string gene;
+    bird.getGene(gene);
+    //Realistically only going to be used for manual testing.
+    os <<" Bird with genetic material "<<gene<<" has benefit "<<bird.benefit<<" and "<<
+            bird.numberOfEggs<<endl;
 }
