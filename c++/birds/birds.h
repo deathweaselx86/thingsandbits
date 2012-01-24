@@ -6,32 +6,53 @@
 #include <iostream>
 #include <ctime>
 #include <cmath>
-#include <cstdlib>
 #include <string>
 #include <vector>
+#include <map>
 
-using namespace std;
+//Okay, this is getting less and less simple. To make this more reusable.
+//let's make an ABC and make Bird a subclass of it.
 
-class Bird{
+class AnimalABC{
+	protected:
+		union gene_t {
+				char charGene[8];
+				int intGene[2]; };
+	 	//This struct is here to make the breeding and mutation easier,
+		//at least in the case of Birds.		
+		typedef std::map<string,char> foodNameToAlphabet;
+		//The simulation class needs to know what the food is called.
+		//The animal class needs to know what food maps to which character
+		//to know how to calculate fitness . 
+	 	virtual void generateRandomGene() = 0;
+		virtual void mutateGene() = 0;	
+		void getGene() { return & const gene; };
+		virtual void combineGeneticMaterial(const & AnimalABC animal1, const & AnimalABC animal2) = 0;
+	private:
+		gene_t gene;
+		int benefit; //this benefit variable is used to calculate the order in which this
+			     //animal shares its genetic material. 
+	public:
+		//default constructors are A-OK
+		void setBenefit(int benefit); 
+		//This can be set by Population given some information from
+		//Simulation.
+
+class Bird : public AnimalABC{
 	public:
 		Bird();
 		~Bird();
 		Bird(const Bird & bird);
-                Bird(const Bird & bird1, const Bird & bird2);
-                
-                void evaluateZeros();
-		void setBenefit(int benefit);
-                int getNumberOfEggs() const;
-                void getGene(string & gene) const;
-                void generateRandomGene();
-                
-                friend ostream & operator<<(ostream & os, const Bird & bird);
-                
+        	void setBenefit(int benefit);
+
 	private:
-                int gene;
-                int benefit;
-		int numberOfEggs;
-	 	int numberOfZeros;
+                void mutateGene();
+		void generateRandomGene();
+                void combineGeneticMaterial();
+        
+	//Population and Simulation don't need "actual" representations of the gene.
+	//This is here so the user can see it.
+	friend std::ostream & operator<<(std::ostream & os, const Bird & bird);
                 
 };
 
@@ -41,16 +62,16 @@ class Population {
         public:
                 Population();
                 ~Population();
-                Population(vector<T> herd);
+                Population(std::vector<T> herd);
                 void setInitialPopulationSize(int popSize);
                 int getCurrentPopulationSize() const;
                 
                 void evaluatePopulationBenefit();
-                vector<T> & getHerd();
+                std::vector<T> & getHerd();
                 
                 
         private:
-                vector<T> herd;
+                std::vector<T> herd;
                 double averageBenefit;
 };
 
@@ -79,5 +100,6 @@ class Simulation {
                 int startingPopulationSize;
                 int currentPopulationSize;
                 int numberOfIterations;
+              
 };
 #endif
