@@ -1,3 +1,6 @@
 #Ignore files with ~ at the end
 *~
 *.pyc
+/c++/birds/dist/Debug/
+/c++/birds/build/Debug/
+/c++/birds/nbproject/private/
