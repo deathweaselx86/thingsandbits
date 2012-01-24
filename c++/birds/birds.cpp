@@ -1,6 +1,12 @@
 #include "birds.h"
 
+using namespace std;
 
+const int maximumPopulationSize = 50;
+const int startingPopulationSize = 10;
+const int numberOfGenerations =  100;
+const int amountOfFlower = 0; //amount of flower
+const int amountOfSeed = 3000; //amount of seed
 const double eggNumberFactor = 100;
 //The above number determines how many eggs a particular Bird produces based on
 //fitness
@@ -11,8 +17,11 @@ using namespace std;
 
 Bird::Bird()
 {
+        numberOfZeros = 0;
         generateRandomGene();
+        evaluateZeros();
         benefit=0;
+        numberOfEggs = 0;
 }
 
 Bird::~Bird(){}
@@ -23,7 +32,7 @@ Bird::Bird(const Bird& bird)
         memcpy(&gene, (void *)(bird.gene), sizeof(int));
         benefit = bird.benefit;
         numberOfEggs = bird.numberOfEggs;
-        evaluateZeros();`
+        evaluateZeros();
 }
 
 
