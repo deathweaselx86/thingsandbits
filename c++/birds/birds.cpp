@@ -1,45 +1,70 @@
 #include "birds.h"
 
-using namespace std;
-
-const int maximumPopulationSize = 50;
-const int startingPopulationSize = 10;
-const int numberOfGenerations =  100;
-const int amountOfFlower = 0; //amount of flower
-const int amountOfSeed = 3000; //amount of seed
-const double eggNumberFactor = 100;
-//The above number determines how many eggs a particular Bird produces based on
-//fitness
 
 
 
-using namespace std;
+void AnimalABC::setGene(const gene_t & newGene) {
+    memcpy(&gene, &newGene, sizeof(gene_t) );
+}
+
+void AnimalABC::setBenefit(int benefit)
+{
+    this->benefit = benefit;
+}
+
+void AnimalABC::mutateGene() 
+{
+    //Have Simulation class call srand() first!...
+    for(int i=0; i < 8; i++)
+    {
+        gene.charGene[i] = gene.charGene[i]^(std::rand()%256);
+    }
+    
+}
+
+void AnimalABC::generateRandomGene()
+{
+    //Have Simulation class call srand() first!...
+    gene.intGene[0] = std::rand();
+    gene.intGene[1] = std::rand();
+}
+
+const std::map<std::string, char> AnimalABC::getFoodMap()
+{
+    return foodNameToAlphabet;
+}
 
 Bird::Bird()
 {
-        numberOfZeros = 0;
         generateRandomGene();
-        evaluateZeros();
-        benefit=0;
-        numberOfEggs = 0;
+        setBenefit(0);
 }
 
 Bird::~Bird(){}
 
-Bird::Bird(const Bird& bird)
+Bird::Bird(Bird & bird)
 {
-        //Copy constructor
-        memcpy(&gene, (void *)(bird.gene), sizeof(int));
-        benefit = bird.benefit;
-        numberOfEggs = bird.numberOfEggs;
-        evaluateZeros();
+        gene_t otherGene = bird.getGene();
+        setGene(otherGene);
+        setBenefit(0);
 }
 
+Bird::Bird(Bird & bird1, Bird & bird2)
+{
+    //Let's combine these two Birds to make a new Bird.
+    combineGeneticMaterial(bird1, bird2);
+}
 
-Bird::Bird(const Bird& bird1, const Bird& bird2)
+void Bird::makeRecombinantBird(Bird & bird1, Bird & bird2)
+{
+    combineGeneticMaterial(bird1, bird2);
+    mutateGene();
+}
+
+void Bird::combineGeneticMaterial(Bird & bird1, Bird & bird2)
 {
     //This method is using for "breeding",
-    //generating new birds (genes) using old birds (genes)
+    //Generating new birds (genes) using old birds (genes)
     //from the previous generation.
     //
     //Again, I hope you used srand() first...
@@ -47,78 +72,24 @@ Bird::Bird(const Bird& bird1, const Bird& bird2)
     //The idea here is 
     //1. Cut bird1, bird2's genes into 1 character slices to
     //get 8 characters.
-    //2. Apply some idea of mutation to the characters so we don't get
-    //stuck in a rut.
-    //3. Construct the new Bird's gene by concatenating 4 of these
+    //2. Construct the new Bird's gene by concatenating 4 of these
     //characters "randomly".
-
-    int randomGeneIndex, i;
-    char chromosomes[8];
     
-    benefit = 0;
-    numberOfEggs = 0;
+    //You really should use Bird::makeRecombinantBird() to avoid
+    //getting stuck in a rut.
+    int i;
+    const gene_t bird1Gene = bird1.getGene();
+    const gene_t bird2Gene = bird2.getGene();
     
-    memcpy(chromosomes, (void *)(bird1.gene), sizeof(int));
-    memcpy(chromosomes+4, (void *)(bird2.gene), sizeof(int));
+    gene_t newGene;
     
-    for(i=0; i<8;i++)
+    for (int i=0; i<8; i++)
     {
-        chromosomes[i] = chromosomes[i]^(rand() % 256);
-    }
-    
-    for (i=0; i<4; i++)
-    {
-        randomGeneIndex = rand() % 8;
-        memcpy((void *)(&gene+i), chromosomes+randomGeneIndex, sizeof(int));
-    }
-
-    
-}
-
-void Bird::evaluateZeros()
-{
-        numberOfZeros=0;
+        if (std::rand() % 2 == 1) 
+                newGene.charGene[i] = bird1Gene.charGene[i];
+        else
+                newGene.charGene[i] = bird2Gene.charGene[i];
         
-        for (int i=0; i<32; i++)
-        {
-            numberOfZeros += (gene << i) & 1;
-        }
-       
-}
-
-inline void Bird::setBenefit(int benefit){
-    this->benefit = benefit;
-}
-
-inline int Bird::getNumberOfEggs() const{
-    //This 60 number is an arbitrary egg factor.
-    return int(benefit/60);
-    
-}
-
-void Bird::getGene(string & gene) const
-{
-    //I don't know of any way to print the genes out in
-    //binary. Hex will do, methinks.
-    int success;
-    char charGene[5];
-    success = sprintf(charGene, "%x", &gene);
-    
-    gene = string(charGene);
-}
-
-void Bird::generateRandomGene()
-{
-    //I hope you called srand() first. 
-    //Your population class should do this for you.
-    gene = std::rand();
-}
-
-ostream & operator<<(ostream & os, const Bird & bird)
-{
-    string gene;
-    bird.getGene(gene);
-    //Realistically only going to be used for manual testing.
-    os <<" Bird with genetic material "<<gene<<" has benefit "<<bird.benefit<<" and "<<
-            bird.numberOfEggs<<endl;
+    }
+    setGene(newGene); //This makes a deep copy! Don't worry!    
 }
