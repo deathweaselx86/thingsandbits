@@ -1,3 +1,11 @@
 #Ignore files with ~ at the end
 *~
 *.pyc
+
+python/data_structures/.project
+
+python/data_structures/.pydevproject
+
+python/data_structures/.settings/org.eclipse.core.resources.prefs
+
+python/data_structures/datastructures/lists.py
