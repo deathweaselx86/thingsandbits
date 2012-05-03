@@ -18,17 +18,13 @@ void setup()
   // Initialize digital pin outputs
   // These default to inputs so no need
   // to initialize them as such.
-  
-  pinMode(LEDout[0],  OUTPUT);
-  pinMode(LEDout[1],  OUTPUT);
-  pinMode(LEDout[2],  OUTPUT);
-  pinMode(LEDout[3],  OUTPUT);
-  
   // Chose random LEDs to start out lit so
   // this sketch is less boring.
   randomSeed(analogRead(0));
   for(int i=0;i<4;i++)
+  {  pinMode(LEDout[i], OUTPUT);
     digitalWrite(LEDout[i], random()%2);
+  }
 }
 
 void loop()
