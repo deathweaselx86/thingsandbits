@@ -9,3 +9,5 @@ python/data_structures/.pydevproject
 python/data_structures/.settings/org.eclipse.core.resources.prefs
 
 python/data_structures/datastructures/lists.py
+
+c++/data_structures/.dep.inc
