@@ -24,7 +24,7 @@ byte mac[] = {
 
 long lastConnectionTime = 0;
 boolean lastConnected = false;
-const int postingInterval = 60;
+const int postingInterval = 10*1000*60; // ten minutes?
 
 // DHT22 sensor is set up on digital pin 7.
 DHT22 DHT22pin(7);
