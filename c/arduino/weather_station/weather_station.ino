@@ -107,7 +107,7 @@ void loop()
          Serial.println("Connecting to pachube");
          client.print("PUT /v2/feeds/");
          client.print(FEEDID);
-         client.println(".csv HTTP/1.1");
+         client.println(" HTTP/1.1");
          client.println("Host: api.pachube.com");
          client.print("X-PachebeApiKey: ");
          client.println(PACHUBEKEY);
