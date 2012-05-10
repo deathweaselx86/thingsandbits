@@ -142,6 +142,10 @@ void loop()
          client.println(PACHUBEKEY);
          client.print("User-Agent: ");
          client.println(USERAGENT);
+         
+         // I get a 401 Authentication 401 Unauthorized response without this
+         // Something tells me that's an issue that Cosm needs to hammer out.
+         client.println("Authorization: Basic ZGVhdGh3ZWFzZWw6bmFuZHk4OA=="); 
          client.print("Content-Length: ");
          client.println(csvString.length()); 
          client.println("Content-Type: text/csv");
