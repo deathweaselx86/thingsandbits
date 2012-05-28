@@ -1,134 +1,99 @@
 /*
+
+This is an IEEE 802.15.4 based weather monitor sketch.
+It's really just half of the solution; the other half will be
+a Processing sketch that will intercept the messages and
+send them to Cosm.
+
+Jessica Ross
 deathweasel@gmail.com
-This is a web-based weather monitor sketch.
-The idea is to check the weather locally every so often, then
-send the data to my local webserver and post it.
 
-For now this sends data to pachube.com.
-I might have to pull data from pachube.com to place on
-deathweasel.net.
-
+Thank you to ladyada, nethoncho et al for the DHT22 
+code!
 */
 
 #include <DHT.h>
-#include <Ethernet.h>
-#include <SPI.h>
-#include <stdio.h>
+#include <XBee.h>
 
-#define COSMKEY "redacted"
-#define USERAGENT "New Arduino Feed"
-#define FEEDID 59148
-#define DHTPIN 7
 #define DHTTYPE DHT22
 
-byte mac[] = { 
-  0x90, 0xA2, 0xDA, 0x00, 0xA2, 0x1F};
-
-long lastConnectionTime = 0;
-const int postingInterval = 2000; // Send data every 10 seconds
-
+// Sensor information.
 // DHT22 sensor is set up on digital pin 7.
+const int DHTPIN=7;
 DHT dht(DHTPIN, DHTTYPE);
-EthernetClient client;
-char server[] = "api.cosm.com";
+
+// XBee information.
+// Allocate 4 bytes of data for each sensor value passed.
+byte payload[] = {0,0,0,0,0,0,0,0};
+XBee xbee = XBee();
+TxStatusResponse txStatus = TxStatusResponse();
+Tx16Request tx16 = Tx16Request(0x6142, payload, sizeof(payload));
+
 
 float humidity, temp;
 String data;
 
 void setup()
 {
-  Serial.begin(9600);
+  pinMode(8,OUTPUT);
+  pinMode(9,OUTPUT);
+  xbee.begin(19200);
   dht.begin();
-  // If Ethernet fails, then don't bother with the contents of
-  // the loop() function.
-  if (Ethernet.begin(mac) == 0){
-     Serial.println("Failed to get IP via DHCP");
-     for(;;)
-      ; 
-  }
-  delay(1000);
+  delay(5000);
+
 }
 
 void loop()
 {
-    Serial.println("beginning of loop");
-    delay(postingInterval);
-    Serial.println("after delay");
     temp = dht.readTemperature();
     humidity = dht.readHumidity();
-  
-    data = constructCsvString(temp, humidity);
-    Serial.println(data);
-    sendData(data);
-  
-    Serial.print("Last time connection was made or attempted: ");
-    Serial.println(lastConnectionTime);
- 
+    sendData(temp,humidity);
+    delay(2000);
 }
- 
- String constructCsvString(float temp, float humidity)
- {
-   char buf[7] = "      "; 
-   String csvString, dummyString;
-   
-   // Constructing a CSV inside a String object to make this
-   // "easier". For each sensor variable, print the sensor id,
-   // then convert the sensor float variable to a string,
-   // trim the extra characters from it, then put it together.
-   
-   csvString = String("temp,");
-   dtostrf(temp,4,2,buf);
-   dummyString = String(buf);
-   dummyString.trim();
-   csvString = csvString + dummyString;
-   
-   csvString = csvString + "\nhumidity,";
-   dtostrf(humidity,4,2,buf);
-   dummyString = String(buf);
-   dummyString.trim();
-   csvString = csvString + dummyString;
-   
-   return csvString;
- }
- 
- void sendData(String csvString)
- {
 
-     if (client.connect(server,80)) {
-         Serial.println("Connecting to cosm");
-         
-         client.print("PUT /v2/feeds/");
-         client.print(FEEDID);
-         client.println(".csv HTTP/1.1");
-         client.println("Host: api.cosm.com");
-         client.print("X-ApiKey: ");
-         client.println(COSMKEY);
-         client.print("User-Agent: ");
-         client.println(USERAGENT);
-         
-         client.print("Content-Length: ");
-         client.println(csvString.length()); 
-         client.println("Accepts: text/csv");
-         client.println("Content-Type: text/plain");
-         client.println("Connection: close");
-         client.println();
-         client.println(csvString);
-         client.println();
-         while (client.available() > 0)
-         {
-           char c = client.read();
-           Serial.print(c);     }
-         Serial.println(); 
-     }
-     else
-     {
-        Serial.println("Connection failed.");
-        Serial.println("Disconnecting");
-        client.stop();
-     }
-     lastConnectionTime = millis();
-     
-  }
-  
-
-
+void sendData(float temp, float humidity)
+{
+    // Trick compiler into letting us bit shift float
+    // by pointing to it with an integer pointer. I hate
+    // this so much and yet I can't accomplish what I want
+    // without it.
+    digitalWrite(8,LOW);
+    digitalWrite(9,LOW);
+    delay(5000);
+    for(int i=0;i<sizeof(payload); i++)
+      payload[i] = 0;
+    int * tempPtr = (int *) (& temp);
+    int * humidityPtr = (int *) (& humidity);
+    //pack temp
+    payload[0] = (*tempPtr >> 24) & 0xff;
+    payload[1] = (*tempPtr >> 16) & 0xff;
+    payload[2] = (*tempPtr >> 8) & 0xff;
+    payload[3] = (*tempPtr) & 0xff;
+    //pack humidity
+    payload[4] = (*humidityPtr >> 24) & 0xff;
+    payload[5] = (*humidityPtr >> 16) & 0xff;
+    payload[6] = (*humidityPtr >> 8) & 0xff;
+    payload[7] = (*humidityPtr) & 0xff;
+    
+    xbee.send(tx16);
+    digitalWrite(9,HIGH);
+    
+    // Wait for the other XBee to let us know it got something.
+    if (xbee.readPacket(5000)) {
+        if (xbee.getResponse().getApiId() == TX_STATUS_RESPONSE) {
+           xbee.getResponse().getZBTxStatusResponse(txStatus);
+           if (txStatus.getStatus() == SUCCESS) {
+               // Great. What should we do to denote success?
+               digitalWrite(8,HIGH); 
+                
+           } else {
+                // the other XBee did not receive our packet. What do
+                // we do to denote failute?
+                ;
+                          }
+        }      
+    } else {
+      // Did we miss the status response???
+      ;
+    }
+}
