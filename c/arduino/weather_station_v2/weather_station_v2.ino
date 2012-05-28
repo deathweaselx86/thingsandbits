@@ -26,8 +26,9 @@ DHT dht(DHTPIN, DHTTYPE);
 // Allocate 4 bytes of data for each sensor value passed.
 byte payload[] = {0,0,0,0,0,0,0,0};
 XBee xbee = XBee();
+XBeeAddress64 addr64 = XBeeAddress64(0x0013a200, 0x408632CB);
 TxStatusResponse txStatus = TxStatusResponse();
-Tx16Request tx16 = Tx16Request(0x6142, payload, sizeof(payload));
+Tx64Request tx64 = Tx64Request(addr64, payload, sizeof(payload));
 
 
 float humidity, temp;
@@ -37,7 +38,7 @@ void setup()
 {
   pinMode(8,OUTPUT);
   pinMode(9,OUTPUT);
-  xbee.begin(19200);
+  xbee.begin(9600);
   dht.begin();
   delay(5000);
 
@@ -57,6 +58,7 @@ void sendData(float temp, float humidity)
     // by pointing to it with an integer pointer. I hate
     // this so much and yet I can't accomplish what I want
     // without it.
+    
     digitalWrite(8,LOW);
     digitalWrite(9,LOW);
     delay(5000);
@@ -74,8 +76,8 @@ void sendData(float temp, float humidity)
     payload[5] = (*humidityPtr >> 16) & 0xff;
     payload[6] = (*humidityPtr >> 8) & 0xff;
     payload[7] = (*humidityPtr) & 0xff;
-    
-    xbee.send(tx16);
+   
+    xbee.send(tx64);
     digitalWrite(9,HIGH);
     
     // Wait for the other XBee to let us know it got something.
