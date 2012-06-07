@@ -69,23 +69,22 @@ void loop()
 {
   
   // Set up sleep mode.
+  // We can only use SLEEP_MODE_IDLE with
+  // Timer1. Use different source of 
+  // interrupt next time. 
   set_sleep_mode(SLEEP_MODE_IDLE);
   sleep_enable();
   // Actually sleep.
   sleep_mode();
   // We continue here after the interrupt.
-  // Sleep mode disabled in interrupt.
-
+  sleep_disable();
 }
 
 ISR(TIMER1_OVF_vect)
 {
-    // Turn things on!
-    sleep_disable();
     temp = dht.readTemperature();
     humidity = dht.readHumidity();
     sendData(temp,humidity);
-    // Shut things down!
 }
 
 void sendData(float temp, float humidity)
