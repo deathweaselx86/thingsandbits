@@ -1,50 +1,6 @@
-Jessica Ross' portfolio
+I'm constantly dropping things in this repository. There's no 
+way I can possibly keep a code manifest up to date.
 
-By no means is this ever complete. If you see something that you think
-I could do better, please feel free to drop me a line at the email 
-address attached to the github you got this code from.
-
-Code Manifest:
-
-C:
-
-shell-ross-2-1.c 
------
-This is a simple UNIX shell I wrote for an Operating Systems class 
-some time ago.
-
-cpre211labfinal.zip
-----
-This is a lab final for an embedded development class. It's a controller program for a piece of farm equipment. This is written in a combination of C and Assembly.
-
- 
-PYTHON:
-
-primeprinter.py
-primeprintertest.py
------
-
-I wrote this for an interview with a software company 
-that I'm not naming. It's generic enough that I can show it here. 
-
-It's mainly here for style purposes.
-
-urlgather.py
-urlgathertest.py
------
-
-This is a very, very primative web crawler.
-
-There are also some ProgrammingPraxis exercises here for
-good measure.
-
-RUBY:
-
-ProgrammingPraxis exercises.
-
-XSLT:
-
-plist_to_usefulness.xsl
-----------------------
-This is some simple XSLT I wrote to turn an album listing exported 
-from iTunes into something moderately useful.
+If you have any suggestions or comments for me regarding any of 
+this, please let me know using whatever means of communication 
+Github provides you. Thanks in advance. 
