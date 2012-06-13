@@ -1,7 +1,7 @@
 /*
 This sketch belongs to the other half of an
 IEEE 802.15.4-based weather monitor solution.
-It sends data received 
+It sends data received to Cosm.com.
 */
 
 #include <Ethernet.h>
@@ -9,7 +9,7 @@ It sends data received
 #include <stdio.h>
 #include <XBee.h>
 
-#define PACHUBEKEY "uEiSX0-LtHYwtDXVlDT0AgalaP2SAKx2MWtWVExvK0Uxcz0g"
+#define PACHUBEKEY "redacted"
 #define USERAGENT "New Arduino Feed"
 #define FEEDID "59148"
 
