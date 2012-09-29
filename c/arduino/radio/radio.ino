@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <avr/interrupt.h>
 
 
 //Add the Si4735 Library to the sketch.
@@ -23,8 +24,8 @@ word myFrequency = 88.5;
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
-
-
+volatile unsigned int lastVolume = 0;
+volatile int volumeChanged = 0;
 void setup()
 {
   Serial.begin(9600);
@@ -32,6 +33,13 @@ void setup()
   radio.begin(SI4735_MODE_FM);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);  
   
+  // Set up interrupts
+  // Let's use analog in 3 for the volume pot
+
+  PCICR |= (1 << PCIE1);
+  PCMSK1 |= (1 << PCINT13);
+  MCUCR = (1<<ISC01);
+  sei();
 }
 
 
@@ -62,10 +70,31 @@ void refreshDisplay()
   display.display();
 }  
 
+ISR(PCINT1_vect)
+{
+  unsigned int currentVolume = analogRead(3);
+  if (currentVolume > lastVolume)
+   {
+       volumeChanged = 1;
+       radio.volumeUp();
+   }
+   else if (currentVolume <= lastVolume)  
+   {
+       volumeChanged = -1;
+       radio.volumeDown();
+   }
+}
 
 void loop()
 {
-  if (millis() % 5000 == 0)
-    refreshDisplay();
+  if (volumeChanged != 0)
+  {
+    if (volumeChanged == 1)
+      Serial.println("Turn volume up");
+    else
+       Serial.println("Turn volume down");
+    volumeChanged = 0;
+  }
+
 }
 
