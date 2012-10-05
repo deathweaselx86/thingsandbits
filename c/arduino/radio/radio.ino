@@ -37,8 +37,8 @@ void setup()
   // Let's use analog in 3 for the volume pot
 
   PCICR |= (1 << PCIE1);
-  PCMSK1 |= (1 << PCINT13);
-  MCUCR = (1<<ISC01);
+  PCMSK1 |= (1 << PCINT11);
+  MCUCR = (0<<ISC11) | (1 <<ISC10);
   sei();
 }
 
@@ -73,28 +73,18 @@ void refreshDisplay()
 ISR(PCINT1_vect)
 {
   unsigned int currentVolume = analogRead(3);
-  if (currentVolume > lastVolume)
+  if (currentVolume < lastVolume)
    {
-       volumeChanged = 1;
        radio.volumeUp();
    }
-   else if (currentVolume <= lastVolume)  
+   else if (currentVolume >= lastVolume)  
    {
-       volumeChanged = -1;
        radio.volumeDown();
    }
+   lastVolume = currentVolume;
 }
 
 void loop()
 {
-  if (volumeChanged != 0)
-  {
-    if (volumeChanged == 1)
-      Serial.println("Turn volume up");
-    else
-       Serial.println("Turn volume down");
-    volumeChanged = 0;
-  }
-
 }
 
