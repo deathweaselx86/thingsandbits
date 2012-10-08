@@ -6,9 +6,9 @@ class HammingInputException(Exception):
     pass
 
 
-def hamming(count):
+def hamming(length):
     """
-        This function will give you a list of the first count numbers of the Hamming
+        This function will give you a list of the first length numbers of the Hamming
         sequence.
         Axiom 1: 1 is in the Hamming sequence.
         Axiom 2: If x is in the Hamming sequence, 2x, 3x, and 5x are in the
@@ -16,19 +16,23 @@ def hamming(count):
         Axiom 3: The Hamming sequence contains no other values other than those
         attributed to it by Axioms 1 and 2.
     	Please see http://programmingpraxis.com/2011/08/30/hamming-numbers/
-    	@input count: The number of Hamming numbers you want outputted.
+    	@input length: The number of Hamming numbers you want generated.
     """
-    if not isinstance(count,int) or count < 1:
+    if not isinstance(length,int) or length < 1:
         raise HammingInputException, "Expected non-negative integer for length of sequence."
-    hamming_sequence = [1]
-    hamming_generator = ((2*ch,3*ch,5*ch) for ch in hamming_sequence)
-    while len(hamming_sequence) < count:
-        for n in hamming_generator.next():
-			if n not in hamming_sequence:
-				hamming_sequence.append(n)
-	hamming_sequence.sort()
-    return hamming_sequence
-
+    number = 1
+    sequence_length = 0
+    while sequence_length < length:
+        if number == 1:
+            yield 1
+            number = number + 1
+        while (number % 2 != 0 and number % 3 != 0 and number % 5 != 0):
+            number = number + 1
+        yield number
+        number = number + 1
+        sequence_length = sequence_length + 1
+    raise StopIteration
 
 if __name__ == '__main__':
-	print hamming(1000)
+    for i in hamming(20):
+        print i
