@@ -11,16 +11,20 @@ import BeautifulSoup
 import urlparse
 from sqlite3 import dbapi2 as sqlite # replace with MongoDB or CouchDB
 from sqlite3 import OperationalError
-ignore_list = ['the','of','to','and','a','in','is','it']
+
+
+IGNORE_LIST = ['the','of','to','and','a','in','is','it']
+
+
+# Yes, I need an ORM. 
+
 class NonStringURLException(Exception):
     pass
 
 class Crawler(object):
-    # Do we need this?
-    # header_data = {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)'}
     
     def __init__(self, dbname):
-        self.connection = Database().connect(dbname)
+        self.connection = DatabaseInterface().connect(dbname)
         self.splitter_regex = re.compile(r'\W*') 
 
     def crawl(self, urls, depth):
@@ -66,7 +70,7 @@ class Crawler(object):
                 (url_id, next_url_id))
         link_id = cursor.lastrowid
         for word in word_list:
-            if word in ignore_list:
+            if word in IGNORE_LIST:
                 continue
             word_id = self.get_entry_id('wordlist','word', word)
             self.connection.execute("INSERT INTO linkwords(linkid, wordid) VALUES (%d, %d)" %\
@@ -77,12 +81,13 @@ class Crawler(object):
         self.connection.commit()
 
     def is_indexed(self, url):
-        rowid = self.connection.execute("SELECT rowid FROM urllist where url='%s'" % url).fetchone()
+        rowid = self.connection.execute("SELECT rowid FROM urllist WHERE url = '%s'" % url).fetchone()
         if rowid != None:
             # Now testing to see if we've crawled the page. This is a little flawed; the page could
             # consist of pictures only or else maybe consist of links other than FTP sites.
-            has_words = self.connection.execute("SELECT * from wordlocation where urlid=%d" % rowid[0]).fetchone()
+            has_words = self.connection.execute("SELECT * from wordlocation WHERE urlid = %d" % rowid[0]).fetchone()
             if has_words != None:
+                print "%s is indexed." % url
                 return True
         return False
 
@@ -97,19 +102,19 @@ class Crawler(object):
         else:
             return soup_object.string.strip()
     
-    def get_entry_id(self, table, field, value, createnew=True):
+    def get_entry_id(self, table, field, value):
         """
         This gets unique ids associated with entering values into the
         database. I need to fold this into the Database class so I 
         can refactor that without changing the Crawler class.
         """
         
-        cursor = self.connection.execute("SELECT rowid FROM %s WHERE %s = '%s'" % \
+        query = self.connection.execute("SELECT rowid FROM %s WHERE %s = '%s'" % \
                 (table, field, value))
-        result = cursor.fetchone()
+        result = query.fetchone()
         if result == None:
-            cursor = self.connection.execute("INSERT INTO %s (%s) VALUES ('%s')" % (table, field, value))
-            return cursor.lastrowid
+            query = self.connection.execute("INSERT INTO %s (%s) VALUES ('%s')" % (table, field, value))
+            return query.lastrowid
         else:
             return result[0]
 
@@ -135,17 +140,128 @@ class Crawler(object):
         word_list = self.separate_words(text)
         url_id = self.get_entry_id('urllist','url',url)
 
-        query = "INSERT INTO wordlocation(urlid, wordid, location) \
+        query_string = "INSERT INTO wordlocation(urlid, wordid, location) \
                 VALUES (%d, %d, %d)"
         for i in xrange(len(word_list)):
             word = word_list[i]
-            if word in ignore_list:
+            if word in IGNORE_LIST:
                 continue
             word_id = self.get_entry_id('wordlist','word',word)
             
-            self.connection.execute(query % (url_id, word_id, i))
+            self.connection.execute(query_string % (url_id, word_id, i))
 
-class Database(object):
+class Searcher(object):
+    def __init__(self, dbname):
+        self.connection = DatabaseInterface().connect(dbname)
+    
+    def get_match_rows(self, query):
+        field_string = 'w0.urlid'
+        table_string = ''
+        clause_string = ''
+        word_ids = []
+        word_dict = {}
+        word_list = query.split(' ')
+        table_number = 0
+
+        # Find out if the words even exist in our database first.
+        for word in word_list:
+            result = self.connection.execute(\
+                    "SELECT rowid FROM wordlist WHERE word = '%s'" % word).fetchone()
+            if result:
+               word_dict[word] = result[0]
+
+        # If none of them exist, let's just return empty results instead of trying
+        # to construct this query.
+        if not word_dict:
+           return [],[]
+
+        for word, word_id in word_dict.iteritems():
+            if word_id != None:
+                word_ids.append(word_id)
+                if table_number > 0:
+                    table_string += ','
+                    clause_string +=' AND '
+                    clause_string += 'w%d.urlid=w%d.urlid AND ' % (table_number-1, table_number)
+                field_string += ',w%d.location' % table_number
+                table_string += 'wordlocation w%d' % table_number
+                clause_string += 'w%d.wordid=%d' % (table_number, word_id)
+                table_number = table_number + 1
+        full_query = ' SELECT %s FROM %s WHERE %s ' % (field_string, table_string, clause_string)
+        result = self.connection.execute(full_query)
+        rows = [row for row in result]
+
+        return rows, word_ids
+    
+    def get_scored_list(self, rows, word_ids):
+        total_scores = {}
+        total_scores.update([(row[0],0) for row in rows])
+        weights = []
+
+        for (weight, scores) in weights:
+            for url in total_scores:
+                total_scores[url] += total_scores[url]
+        return total_scores
+   
+    def get_url_name(self, id):
+        return self.connection.execute(\
+                "SELECT url FROM urllist WHERE rowid=%d" % id).fetchone()[0]
+   
+    def query(self, query_string):
+        rows, word_ids = self.get_match_rows(query_string)
+        scores = self.get_scored_list(rows, word_ids)
+        ranked_scores = scores.items()
+        ranked_scores.sort(key = lambda item:item[1])
+        for (url_id, score) in ranked_scores[0:10]:
+            print '%f\t%s' % (score, self.get_url_name(url_id))
+
+    def normalize_scores(self, scores, smaller_is_better=False):
+        very_small_value = 0.00001
+        return_dict = {}
+        if smaller_is_better:
+            minimum_score = min(scores.values())
+            return_dict.update([(url_id, float(minimum_score)/max(very_small_value, score)) for url_id, score in scores.items()])
+        else:
+            maximum_score = max(scores.values())
+            if not maximum_score:
+                maximum_score = very_small_value
+            return_dict.update([(url_id, float(score)/maximum_score) for url_id, score in scores.items()])
+        return return_dict
+    
+    def frequency_score(self, rows):
+        frequencies = {}
+        frequencies.update([(row[0],0) for row in rows])
+        for row in rows:
+            frequencies[row[0]] += 1
+        return self.normalize_scores(frequencies)
+    
+    def location_score(self, rows):
+        locations = {}
+        locations.update([(row[0],10000000) for row in rows])
+        for row in rows:
+            location = sum(row[1:])
+            if location < locations[row[0]]:
+                locations[row[0]] = location
+        return self.normalize_scores(locations, smaller_is_better=True)
+
+    def distance_score(self, rows):
+        distances = {}
+        if len(rows[0]) <= 2:
+            distances.update([(row[0], 1.0) for row in rows])
+        
+        distances.update([(row[0], 1000000) for row in rows])
+        for row in rows:
+            distance = sum([abs(row[i] - row[i-1]) for i in range(2, len(row))])
+            if distance < distances[row[0]]:
+                distances[row[0]] = distance
+
+        return self.normalize_scores(distances, smaller_is_better=True)
+
+
+# TODO: Make a base class for database interfaces. Make two subclasses;
+# one that is SQLAlchemy-based for relational database usage and one for
+# MongoDB.
+
+class DatabaseInterface(object):
 
     def connect(self, dbname):
         self.connection = sqlite.connect(dbname)
@@ -155,7 +271,6 @@ class Database(object):
         self.connection.close()
 
     def create_tables(self):
-        # Ughhhhhh, don't make this a specific method in the Database class.
         try:
             self.connection.execute('create table urllist(url)')
             self.connection.execute('create table wordlist(word)')
@@ -170,9 +285,13 @@ class Database(object):
             self.connection.commit()
         except OperationalError, e:
             pass
+    
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args,**kwargs)
+    
     def commit(self, *args, **kwargs):
         return self.connection.commit(*args, **kwargs)
+
 if __name__ == "__main__":
-    crawler = Crawler('crawlerdb.db').crawl(['http://deathweasel.net','http://google.com'], 2)
+    Searcher('crawlerdb.db')
+    # crawler = Crawler('crawlerdb.db').crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
