@@ -381,35 +381,48 @@ class DatabaseInterface(object):
             This method calculates the PageRank of the URLs in the database. This assumes
             you have populated the tables link and urllist.
 
-            It will wipe out any existing pagerank table and take forever, at least
-            on SQLite.
-            
+            It will wipe an existing pagerank table.
         """
         self.connection.execute('DROP TABLE IF EXISTS pagerank')
         self.connection.execute('CREATE TABLE pagerank(urlid primary key, score)')
         
-        # Every url is initialized with a page rank of 1
-        self.connection.execute('INSERT INTO pagerank SELECT rowid, 1.0 FROM urllist')
-        self.commit()
         
-        final_pageranks = {}
+        # There's no reason we should be inserting the results of each iteration of
+        # this calculation back into the database. 
+        
+        url_ids = {} # This is a dictionary of url to url_id 
+        page_ranks = {} # This is a dictionary of url_id to page_rank score
+        url_links = {} # This is a dictionary of link from_ids to lists of link to_ids
+        
+        # Set up constant information. This does take quite a bit,
+        # but it is faster than what it was.
+        url_rows = self.connection.execute('SELECT rowid, url FROM urllist')
+        for row_id, url in url_rows:
+            url_ids[url] = row_id
+            if row_id not in url_links:
+                result = self.connection.execute('SELECT fromid FROM link WHERE toid=%d' % row_id)
+                url_links[row_id] = result
+                for url_link in url_links:
+                    # Every url is initialized with a page rank of 1
+                    page_ranks[url_link] = 1.0
+
         for i in range(iterations):
             print "Iteration %d" % i
-            url_ids = self.connection.execute('SELECT rowid FROM urllist')
-            for url_id in url_ids:
-                url_id = url_id[0]
-                pr = 0.15
+            for url_id in url_ids.itervalues():
+                page_rank = 0.15
                 # For every page that links to this one
-                url_links = self.connection.execute('SELECT distinct fromid FROM link WHERE toid=%d' % url_id)
-                for url_link in url_links:
-                    page_rank = self.connection.execute('SELECT score FROM pagerank WHERE urlid=%d' % url_link).fetchone()[0]
+                url_link_list = set(url_links[url_id])
+                for url_link in url_link_list:
                     # Get the total number of links from this url
-                    url_link_count = self.connection.execute('SELECT count(*) FROM link WHERE fromid=%d' % url_link).fetchone()[0]
-                    pr += 0.85*(page_rank/url_link_count)
-                self.connection.execute('UPDATE pagerank SET score=%f WHERE urlid=%d' % (pr, url_id))
-                self.commit()
+                    url_link_count = len(url_link_list)
+                    page_rank += 0.85*(page_rank/url_link_count)
+                page_ranks[url_id] = page_rank
+        
+        # Do not like this, must be a better way to update this all at once...
+        for url_id, page_rank in page_ranks.iteritems():
+            self.connection.execute('UPDATE pagerank SET score=%f WHERE urlid=%d' % (page_rank, url_id))
+        self.commit()
 
-                linked_pages = self
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args,**kwargs)
     
@@ -419,9 +432,9 @@ class DatabaseInterface(object):
 if __name__ == "__main__":
     import sys
     DatabaseInterface().connect().calculate_pagerank()
-    #if len(sys.argv) > 1:
-    #    print ' '.join(sys.argv[1:])
-    #    Searcher().search_term_query(' '.join(sys.argv[1:]))
-    #else:
-    #    print "I need some search terms."
-    #crawler = Crawler().crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
+    if len(sys.argv) > 1:
+        print ' '.join(sys.argv[1:])
+        Searcher().search_term_query(' '.join(sys.argv[1:]))
+    else:
+        print "I need some search terms."
+    crawler = Crawler().crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
