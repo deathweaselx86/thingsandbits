@@ -9,9 +9,11 @@ import urllib2
 import re
 import BeautifulSoup
 import urlparse
+
 from sqlite3 import dbapi2 as sqlite # replace with MongoDB or CouchDB
 from sqlite3 import OperationalError
 
+from nltk.stem.porter import PorterStemmer
 
 IGNORE_LIST = ['the','of','to','and','a','in','is','it']
 
@@ -26,6 +28,10 @@ class Crawler(object):
     def __init__(self, dbname):
         self.connection = DatabaseInterface().connect(dbname)
         self.splitter_regex = re.compile(r'\W*') 
+        # Primitive caching. Get a real caching solution.
+        # This is already ridiculous.
+        self.stemmed_words = {}
+        self.indexed_urls = {}
 
     def crawl(self, urls, depth):
         """
@@ -66,9 +72,9 @@ class Crawler(object):
         next_url_id = self.get_entry_id('urllist', 'url', next_url)
         if url_id == next_url_id:
             return
-        cursor = self.connection.execute("INSERT INTO link(fromid, toid) VALUES (%d, %d)" %\
+        query = self.connection.execute("INSERT INTO link(fromid, toid) VALUES (%d, %d)" %\
                 (url_id, next_url_id))
-        link_id = cursor.lastrowid
+        link_id = query.lastrowid
         for word in word_list:
             if word in IGNORE_LIST:
                 continue
@@ -81,14 +87,19 @@ class Crawler(object):
         self.connection.commit()
 
     def is_indexed(self, url):
-        rowid = self.connection.execute("SELECT rowid FROM urllist WHERE url = '%s'" % url).fetchone()
+        """
+            Check to see if this URL has already been cataloged. Adds a form of caching to 
+            avoid repeating queries. TODO: Add a real caching system.
+        """
+        if url in self.indexed_urls:
+            print "%s is indexed" % url
+            return True
+        else:
+            rowid = self.connection.execute("SELECT rowid FROM urllist WHERE url = '%s'" % url).fetchone()
         if rowid != None:
-            # Now testing to see if we've crawled the page. This is a little flawed; the page could
-            # consist of pictures only or else maybe consist of links other than FTP sites.
-            has_words = self.connection.execute("SELECT * from wordlocation WHERE urlid = %d" % rowid[0]).fetchone()
-            if has_words != None:
-                print "%s is indexed." % url
-                return True
+            self.indexed_urls[url] = None
+            print "%s is indexed" % url
+            return True 
         return False
 
     def get_text_only(self, soup_object):
@@ -123,8 +134,22 @@ class Crawler(object):
         """
             Superficially, it should be enough to split on whitespace, but that's not quite it.
             Just split on non-word.
+
+            We should also stem words so we don't have redundant entries in the database.
         """
-        return [word.lower() for word in self.splitter_regex.split(text) if word !='']
+        unstemmed_word_list = [word.lower() for word in self.splitter_regex.split(text) if word !='']
+        stemmed_word_list = []
+
+        # This is still an inefficient way of storing words that have already been stemmed.
+        # I will come up with a better way.
+
+        for word in unstemmed_word_list:
+            stemmed_word = self.stemmed_words.get(word, None)
+            if stemmed_word is None:
+                stemmed_word = PorterStemmer().stem(word)
+                self.stemmed_words[word] = stemmed_word
+            stemmed_word_list.append(stemmed_word)
+        return stemmed_word_list
 
     def add_to_index(self, url, soup_object):
         """
@@ -160,9 +185,9 @@ class Searcher(object):
         clause_string = ''
         word_ids = []
         word_dict = {}
-        word_list = query.split(' ')
+        word_list = [PorterStemmer().stem(word) for word in query.split(' ')]
         table_number = 0
-
+        
         # Find out if the words even exist in our database first.
         for word in word_list:
             result = self.connection.execute(\
@@ -293,5 +318,5 @@ class DatabaseInterface(object):
         return self.connection.commit(*args, **kwargs)
 
 if __name__ == "__main__":
-    Searcher('crawlerdb.db')
-    # crawler = Crawler('crawlerdb.db').crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
+    #Searcher('crawlerdb.db')
+    crawler = Crawler('crawlerdb.db').crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
