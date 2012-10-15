@@ -24,14 +24,20 @@ class NonStringURLException(Exception):
     pass
 
 class Crawler(object):
+    """
+    Method signatures for this class are taken from Programming
+    Collective Intelligence: Building Smart Web 2.0 Applications
     
-    def __init__(self, dbname):
-        self.connection = DatabaseInterface().connect(dbname)
-        self.splitter_regex = re.compile(r'\W*') 
+    These aren't really the same though.
+    """
+   
+    def __init__(self):
+        self.connection = DatabaseInterface().connect()
+        self.splitter_regex = re.compile(r'[^\d|\w|\+|\^|\$|\|]+') 
         # Primitive caching. Get a real caching solution.
         # This is already ridiculous.
         self.stemmed_words = {}
-        self.indexed_urls = {}
+        self.indexed_urls = set()
 
     def crawl(self, urls, depth):
         """
@@ -97,12 +103,16 @@ class Crawler(object):
         else:
             rowid = self.connection.execute("SELECT rowid FROM urllist WHERE url = '%s'" % url).fetchone()
         if rowid != None:
-            self.indexed_urls[url] = None
+            self.indexed_urls.add(url)
             print "%s is indexed" % url
             return True 
         return False
 
     def get_text_only(self, soup_object):
+        """
+            Recursively split, then rejoin the contents of our BeautifulSoup object
+            into a plain text string.
+        """
         if soup_object.string == None:
             contents = soup_object.contents
             result_text = ''
@@ -116,8 +126,10 @@ class Crawler(object):
     def get_entry_id(self, table, field, value):
         """
         This gets unique ids associated with entering values into the
-        database. I need to fold this into the Database class so I 
-        can refactor that without changing the Crawler class.
+        database. 
+        
+        The naked queries inside of this method don't really belong here.
+        We need an ORM.
         """
         
         query = self.connection.execute("SELECT rowid FROM %s WHERE %s = '%s'" % \
@@ -154,8 +166,9 @@ class Crawler(object):
     def add_to_index(self, url, soup_object):
         """
             This method inserts URLs and associated information into the database.
-            Needs to be refactored such that I can swap the database in and out without
-            changing the Crawler code.
+            
+            Naked queries don't belong in this method in this form. I need an ORM
+            of some sort.
         """
         if self.is_indexed(url):
             return
@@ -167,6 +180,7 @@ class Crawler(object):
 
         query_string = "INSERT INTO wordlocation(urlid, wordid, location) \
                 VALUES (%d, %d, %d)"
+        
         for i in xrange(len(word_list)):
             word = word_list[i]
             if word in IGNORE_LIST:
@@ -176,8 +190,17 @@ class Crawler(object):
             self.connection.execute(query_string % (url_id, word_id, i))
 
 class Searcher(object):
-    def __init__(self, dbname):
-        self.connection = DatabaseInterface().connect(dbname)
+    """
+        Method signatures for this class are taken from Programming
+        Collective Intelligence: Building Smart Web 2.0 Applications
+
+    """
+    def __init__(self):
+        """
+            Set up connection through a database interface to avoid
+            having to change this if we chose to swap the database.
+        """
+        self.connection = DatabaseInterface().connect()
     
     def get_match_rows(self, query):
         field_string = 'w0.urlid'
@@ -217,29 +240,39 @@ class Searcher(object):
 
         return rows, word_ids
     
-    def get_scored_list(self, rows, word_ids):
+    def get_scored_list(self, rows):
         total_scores = {}
         total_scores.update([(row[0],0) for row in rows])
-        weights = []
+        weights = [(1, self.frequency_score(rows)), (20.0, self.distance_score(rows))]
 
-        for (weight, scores) in weights:
+        for weight, scores in weights:
             for url in total_scores:
-                total_scores[url] += total_scores[url]
+                total_scores[url] += weight*scores[url]
         return total_scores
    
     def get_url_name(self, id):
         return self.connection.execute(\
                 "SELECT url FROM urllist WHERE rowid=%d" % id).fetchone()[0]
    
-    def query(self, query_string):
+    def search_term_query(self, query_string, returns=20):
+        """
+            Use this method to seach for your words... or the stems
+            of them, anyway. Right now does a search of ALL of your words.
+
+        """
         rows, word_ids = self.get_match_rows(query_string)
-        scores = self.get_scored_list(rows, word_ids)
+        scores = self.get_scored_list(rows)
         ranked_scores = scores.items()
-        ranked_scores.sort(key = lambda item:item[1])
-        for (url_id, score) in ranked_scores[0:10]:
+        ranked_scores.sort(key = lambda item:item[1], reverse=True)
+        for (url_id, score) in ranked_scores[0:returns]:
             print '%f\t%s' % (score, self.get_url_name(url_id))
 
     def normalize_scores(self, scores, smaller_is_better=False):
+        """
+            Use this method to get all of the scores in the range 
+            [0,1]. Sometimes a better value should be closer to
+            0 or 1, so we add the smaller_is_better kwarg.
+        """
         very_small_value = 0.00001
         return_dict = {}
         if smaller_is_better:
@@ -253,6 +286,10 @@ class Searcher(object):
         return return_dict
     
     def frequency_score(self, rows):
+        """
+            This method is used to score urls based on
+            how many times the search terms appear.
+        """
         frequencies = {}
         frequencies.update([(row[0],0) for row in rows])
         for row in rows:
@@ -260,6 +297,10 @@ class Searcher(object):
         return self.normalize_scores(frequencies)
     
     def location_score(self, rows):
+        """
+            This method is used to score urls based on
+            the location in the document the search terms appear.
+        """
         locations = {}
         locations.update([(row[0],10000000) for row in rows])
         for row in rows:
@@ -269,6 +310,10 @@ class Searcher(object):
         return self.normalize_scores(locations, smaller_is_better=True)
 
     def distance_score(self, rows):
+        """
+            This method is used to score urls based on the distance
+            of the search terms from one another.
+        """
         distances = {}
         if len(rows[0]) <= 2:
             distances.update([(row[0], 1.0) for row in rows])
@@ -281,6 +326,14 @@ class Searcher(object):
 
         return self.normalize_scores(distances, smaller_is_better=True)
 
+    # Inbound link scores
+    def inbound_link_score(self, rows):
+        inbound_count = {}
+        unique_urls = set([row[0] for row in rows])
+        inbound_count.update([(url, self.connection.execute(\
+                'SELECT COUNT(*) FROM link WHERE toid=%d' % url).fetchone()[0]) \
+                for url in unique_urls])
+        return self.normalize_scores(inbound_count)
 
 # TODO: Make a base class for database interfaces. Make two subclasses;
 # one that is SQLAlchemy-based for relational database usage and one for
@@ -288,7 +341,14 @@ class Searcher(object):
 
 class DatabaseInterface(object):
 
-    def connect(self, dbname):
+    def connect(self):
+        """
+            This method is used to open up our SQLite database for now.
+            I hope to transform this into something we can use with
+            an arbitrary relational or non-relational database.
+        """
+        db_config = open('dbconfig.txt')
+        dbname = db_config.readline().replace('\n','')
         self.connection = sqlite.connect(dbname)
         return self
 
@@ -296,21 +356,60 @@ class DatabaseInterface(object):
         self.connection.close()
 
     def create_tables(self):
+        """
+            This method makes the tables needed for this to run
+            properly. We should only need to run this once. It
+            will raise if you try to create tables that already exist.
+        """
         try:
-            self.connection.execute('create table urllist(url)')
-            self.connection.execute('create table wordlist(word)')
-            self.connection.execute('create table wordlocation(urlid,wordid,location)')
-            self.connection.execute('create table link(fromid integer,toid integer)')
-            self.connection.execute('create table linkwords(wordid,linkid)')
-            self.connection.execute('create index wordidx on wordlist(word)')
-            self.connection.execute('create index urlidx on urllist(url)')
-            self.connection.execute('create index wordurlidx on wordlocation(wordid)')
-            self.connection.execute('create index urltoidx on link(toid)')
-            self.connection.execute('create index urlfromidx on link(fromid)')
+            self.connection.execute('CREATE TABLE urllist(url)')
+            self.connection.execute('CREATE TABLE wordlist(word)')
+            self.connection.execute('CREATE TABLE wordlocation(urlid,wordid,location)')
+            self.connection.execute('CREATE TABLE link(fromid integer,toid integer)')
+            self.connection.execute('CREATE TABLE linkwords(wordid,linkid)')
+            self.connection.execute('CREATE INDEX wordidx ON wordlist(word)')
+            self.connection.execute('CREATE INDEX urlidx ON urllist(url)')
+            self.connection.execute('CREATE INDEX wordurlidx ON wordlocation(wordid)')
+            self.connection.execute('CREATE INDEX urltoidx ON link(toid)')
+            self.connection.execute('CREATE INDEX urlfromidx ON link(fromid)')
             self.connection.commit()
         except OperationalError, e:
             pass
-    
+
+    def calculate_pagerank(self, iterations=20):
+        """
+            This method calculates the PageRank of the URLs in the database. This assumes
+            you have populated the tables link and urllist.
+
+            It will wipe out any existing pagerank table and take forever, at least
+            on SQLite.
+            
+        """
+        self.connection.execute('DROP TABLE IF EXISTS pagerank')
+        self.connection.execute('CREATE TABLE pagerank(urlid primary key, score)')
+        
+        # Every url is initialized with a page rank of 1
+        self.connection.execute('INSERT INTO pagerank SELECT rowid, 1.0 FROM urllist')
+        self.commit()
+        
+        final_pageranks = {}
+        for i in range(iterations):
+            print "Iteration %d" % i
+            url_ids = self.connection.execute('SELECT rowid FROM urllist')
+            for url_id in url_ids:
+                url_id = url_id[0]
+                pr = 0.15
+                # For every page that links to this one
+                url_links = self.connection.execute('SELECT distinct fromid FROM link WHERE toid=%d' % url_id)
+                for url_link in url_links:
+                    page_rank = self.connection.execute('SELECT score FROM pagerank WHERE urlid=%d' % url_link).fetchone()[0]
+                    # Get the total number of links from this url
+                    url_link_count = self.connection.execute('SELECT count(*) FROM link WHERE fromid=%d' % url_link).fetchone()[0]
+                    pr += 0.85*(page_rank/url_link_count)
+                self.connection.execute('UPDATE pagerank SET score=%f WHERE urlid=%d' % (pr, url_id))
+                self.commit()
+
+                linked_pages = self
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args,**kwargs)
     
@@ -318,5 +417,11 @@ class DatabaseInterface(object):
         return self.connection.commit(*args, **kwargs)
 
 if __name__ == "__main__":
-    #Searcher('crawlerdb.db')
-    crawler = Crawler('crawlerdb.db').crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
+    import sys
+    DatabaseInterface().connect().calculate_pagerank()
+    #if len(sys.argv) > 1:
+    #    print ' '.join(sys.argv[1:])
+    #    Searcher().search_term_query(' '.join(sys.argv[1:]))
+    #else:
+    #    print "I need some search terms."
+    #crawler = Crawler().crawl(['http://deathweasel.net','http://google.com','http://www.yahoo.com','http://www.atxhackerspace.org'], 2)
