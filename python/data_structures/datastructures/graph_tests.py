@@ -3,7 +3,8 @@
 # vim: fileencoding=utf-8 tabstop=4 expandtab shiftwidth=4
 
 import unittest
-from graph import Vertex, Edge, Graph, MissingVertexException, MissingEdgeException
+from graph import Vertex, Edge, Graph, MissingVertexException,\
+        MissingEdgeException, DuplicateEdgeException, DuplicateVertexException
 
 class TestVertex(unittest.TestCase):
     """
@@ -114,9 +115,18 @@ class TestGraph(unittest.TestCase):
         graph.add_edge_by_vertices(self.vertices[1], self.vertices[2])
         self.assertIn(Edge(self.vertices[1], self.vertices[2]), graph.edges)
     
+    def test_vertex_uniqueness(self):
+        self.assertRaises(DuplicateVertexException, self.graph.add_vertex, self.vertices[0])
+    
+    def test_edge_uniqueness(self):
+        self.assertRaises(DuplicateEdgeException, self.graph.add_edge,\
+                Edge(self.vertices[2], self.vertices[0]))
+    
     def test_get_edge(self):
         self.assertTrue(self.graph.get_edge(self.edges[0]))
         self.assertFalse(self.graph.get_edge(Edge(Vertex(5), self.vertices[2])))
+        # What happens if we try to get a edge from vertex x to x?
+        self.assertFalse(self.graph.get_edge(Edge(self.vertices[0], self.vertices[0])))
 
     def test_get_edge_by_vertices(self):
         self.assertTrue(self.graph.get_edge_by_vertices(self.vertices[2], self.vertices[0]))
@@ -124,19 +134,26 @@ class TestGraph(unittest.TestCase):
 
     def test_remove_vertex(self):
         # If we remove a vertex, we should probably remove all of its edges, as well.
+        graph = Graph("graph", vertices=self.vertices, edges=self.edges)
+        self.assertIsNone(graph.remove_vertex(self.vertices[0]))
+        self.assertRaises(MissingEdgeException, graph.get_edge, Edge(self.vertices[0], self.vertices[2]))
         # Can remove vertices from an empty graph?
+        graph = Graph("graph")
+        self.assertRaises(MissingVertexException, graph.remove_vertex, self.extraVertex)
         # Can we remove a vertex from a graph that has no edges associated with it?
-        pass 
+        graph = Graph("graph", vertices=[self.extraVertex])
+        self.assertIsNone(graph.remove_vertex(self.extraVertex))
 
     def test_remove_edge(self):
         # Can we remove a regular edge that exists?
-        self.graph.add_edge_by_vertices(self.vertices[1], self.vertices[2])
-        self.graph.remove_edge(Edge(self.vertices[1], self.vertices[2]))
-        self.assertIsNone(self.graph.get_edge_by_vertices(Vertex(1), self.vertices[2]))
+        edge = Edge(self.vertices[1], self.vertices[2])
+        self.graph.add_edge(edge)
+        self.graph.remove_edge(edge)
+        self.assertRaises(MissingEdgeException, self.graph.get_edge, edge)
         # Can we do it symmetrically?
-        self.graph.add_edge_by_vertices(self.vertices[1], self.vertices[2])
-        self.graph.remove_edge(Edge(self.vertices[2], self.vertices[1]))
-        self.assertIsNone(self.graph.get_edge_by_vertices(self.vertices[1], self.vertices[2]))
+        self.graph.add_edge(edge)
+        self.graph.remove_edge(edge.inverse)
+        self.assertRaises(MissingEdgeException,self.graph.get_edge, edge)
         # What happens if we remove an edge that doesn't exist by virtue of vertex doesn't exist?
         self.assertRaises(MissingEdgeException, self.graph.remove_edge, self.extraEdge)
         # What happens if we remove an edge that doesn't exist by virtual of edge doesn't exist?
