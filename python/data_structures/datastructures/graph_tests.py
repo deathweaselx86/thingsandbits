@@ -106,10 +106,15 @@ class TestGraph(unittest.TestCase):
         self.assertIn(Vertex(4),graph.vertices)
 
     def test_add_edge(self):
+        edge = Edge(self.vertices[1], self.vertices[2])
+        loop = Edge(self.vertices[1], self.vertices[1])
         graph = Graph("graph", vertices = self.vertices, edges = self.edges)
-        graph.add_edge(Edge(self.vertices[1], self.vertices[2]))
-        self.assertIn(Edge(self.vertices[1], self.vertices[2]), graph.edges)
-    
+        graph.add_edge(edge)
+        self.assertIn(edge, graph.edges)
+        # Can we add a loop?
+        graph.add_edge(loop)
+        self.assertIn(loop, graph.edges)
+
     def test_add_edge_by_vertex(self):
         graph = Graph("graph", vertices = self.vertices, edges = self.edges)
         graph.add_edge_by_vertices(self.vertices[1], self.vertices[2])
@@ -123,15 +128,17 @@ class TestGraph(unittest.TestCase):
                 Edge(self.vertices[2], self.vertices[0]))
     
     def test_get_edge(self):
+        bad_edge = Edge(self.extraVertex, self.vertices[2])
+        loop = Edge(self.vertices[0], self.vertices[0])
         self.assertTrue(self.graph.get_edge(self.edges[0]))
-        self.assertFalse(self.graph.get_edge(Edge(Vertex(5), self.vertices[2])))
-        # What happens if we try to get a edge from vertex x to x?
-        self.assertFalse(self.graph.get_edge(Edge(self.vertices[0], self.vertices[0])))
-
+        self.assertRaises(MissingEdgeException, self.graph.get_edge, bad_edge)
+        # What happens if we try to get a loop that doesn't exist?
+        self.assertRaises(MissingEdgeException, self.graph.get_edge, loop)
+        
     def test_get_edge_by_vertices(self):
         self.assertTrue(self.graph.get_edge_by_vertices(self.vertices[2], self.vertices[0]))
-        self.assertFalse(self.graph.get_edge_by_vertices(self.extraVertex, self.vertices[0]))
-
+        self.assertRaises(MissingEdgeException, self.graph.get_edge_by_vertices, self.extraVertex, self.vertices[0])
+    
     def test_remove_vertex(self):
         # If we remove a vertex, we should probably remove all of its edges, as well.
         graph = Graph("graph", vertices=self.vertices, edges=self.edges)
@@ -156,7 +163,7 @@ class TestGraph(unittest.TestCase):
         self.assertRaises(MissingEdgeException,self.graph.get_edge, edge)
         # What happens if we remove an edge that doesn't exist by virtue of vertex doesn't exist?
         self.assertRaises(MissingEdgeException, self.graph.remove_edge, self.extraEdge)
-        # What happens if we remove an edge that doesn't exist by virtual of edge doesn't exist?
+        # What happens if we remove an edge that doesn't exist by virtue of edge doesn't exist?
         self.graph.add_vertex(self.extraVertex)
         self.assertRaises(MissingEdgeException, self.graph.remove_edge, self.extraEdge)
         self.graph.remove_vertex(self.extraVertex)

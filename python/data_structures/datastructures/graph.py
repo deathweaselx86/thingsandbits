@@ -16,6 +16,9 @@ class DuplicateVertexException(Exception):
     pass
 
 class Vertex(object):
+    """
+        This class represents a vertex in a graph.
+    """
     def __init__(self, label):
         """
             This label can be anything hashable.
@@ -44,7 +47,10 @@ class Vertex(object):
         return self.__label
 
 class Edge(tuple):
-    
+    """
+        This class represents an edge (a connection)
+        between two vertices in a graph.
+    """
     def __new__(cls, vertex1, vertex2):
         return tuple.__new__(cls, (vertex1, vertex2))
     
@@ -99,6 +105,15 @@ class Graph(object):
                     self.add_edge(edge)
                 else:
                     raise MissingVertexException("%s is not a valid Edge for this graph." % (edge,))
+
+    def __repr__(self):
+       """  
+            Use this method to get a somewhat confusing textual output of vertices
+            and edges connected to each vertex. 
+       """
+       return "Graph %s" % self.label    
+   
+   
     @property
     def vertices(self):
         return self.__vertices
@@ -209,30 +224,70 @@ class Graph(object):
         """
         from itertools import ifilter
        
-        # Scope, don't fail me now.
         return ifilter(lambda x: vertex in x.vertices, self.edges)
+
+        pass
+
+    def breadth_first_search(self, vertex):
+        """
+            Implementation of the breadth first search algorithm.
+            Arguably, this is really a test to see if the vertex exists in
+            the graph AND has a path to the arbitrary vertex
+            self.vertices[0].
+        """
+        from collections import deque
+        
+        if len(self.vertices) < 1:
+            raise MissingVertexException("%s does not exist in %s" % (vertex, self))
+        
+        queue = deque()
+        marked = []
+        marked.append(self.vertices[0])
+        queue.append(self.vertices[0])
+        while len(queue) > 0:
+            this_vertex = queue.popleft()
+            if this_vertex == vertex:
+                return this_vertex
+            for that_vertex in self.adjacent_vertices(this_vertex):
+                if that_vertex not in marked:
+                    marked.append(that_vertex)
+                    queue.append(that_vertex)
+        raise MissingVertexException("%s does not exist in %s" % (vertex, self))
+
+    def depth_first_search(self, vertex):
+        """
+            This is an ignorant version of the depth-first search algorthm. This is
+            pretty much the same as the BFS, but uses a stack instead of a queue.
+            This makes sense.
+
+            TODO: Replace this with something smarter.
+        """
+        from collections import deque
+
+        if len(self.vertices) < 1:
+            raise MissingVertexException("%s does not exist in %s" % (vertex, self))
+        queue = deque()
+        marked = []
+        marked.append(self.vertices[0])
+        queue.append(self.vertices[0])
+        while len(queue) > 0:
+            this_vertex = queue.pop()
+            if this_vertex == vertex:
+                return this_vertex
+            for that_vertex in self.adjacent_vertices(this_vertex):
+                if that_vertex not in marked:
+                    marked.append(that_vertex)
+                    queue.append(that_vertex)
+        raise MissingVertexException("%s does not exist in %s" % (vertex, self))
+
+
 
     def is_connected(self):
        """
-            Use this method to determine whether this graph is connected.
-            A graph is connected if there's an edge from every vertex to every 
-            other vertex.
+            Use this method to determine whether this graph is connected --
+            There is a path from vertex a to vertex b for all vertices a,b
+            in this graph.
+            
        """
-        # Okay. The way I wrote this, we can make some assumptions.
-        # 1. Each vertex must be unique. (Labelwise, not just by memory address)
-        # 2. Edges contain unique vertices are are defined by their
-        # vertices, so they are also unique.
-        # Thus We should be able to count the number of edges coming from
-        # each vertex and determine whether or not this graph is connected.
-        #
-        # Hurray for avoiding BFS/DFS algorithms!
-        # 
-        # We can't do this with directed graphs, though :(
        pass
 
-    def __repr__(self):
-       """  
-            Use this method to get a somewhat confusing textual output of vertices
-            and edges connected to each vertex. 
-       """
-       return "Graph %s" % self.label
