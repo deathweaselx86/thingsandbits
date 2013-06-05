@@ -15,7 +15,22 @@ void setup() {
     Wire.begin();
     RTC.begin();
     matrix.begin(0x70);
-  }
+
+    // Set up Timer1 so we can just check the time once per
+    // second instead of just waiting. The maximum wait time 
+    // I'm allowed to use is a bit more than 4s, but this is good enough.
+    cli();
+    TCCR1A = 0;
+    TCCR1B = 0;
+    TCNT1 = 0;
+    // Turn on CTC mode; count up to 15624 before 
+    // triggering interrupt.
+    TCCR1B |= (1 <<WGM12);
+    OCR1A = 15624; 
+    TCCR1B = (1 << CS10) | (1 << CS12);
+    TIMSK1 = (1 << OCIE1A); 
+    sei();  
+}
   
 void loop()
 {
