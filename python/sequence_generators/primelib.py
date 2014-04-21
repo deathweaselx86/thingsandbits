@@ -44,18 +44,19 @@ class PrimeGenerators(object):
     def erastosthenes(self, n):
         """
         This is the classic Sieve of Eratosthenes. 
-        This will give you all of the prime numbers between
+        This will give you a list of all of the prime numbers between
         2 and n, inclusive (if applicable).
+        
+        They should be emitted in increasing order.
         """
         if n < 2:
             return []
         
-        upper_bound = int(sqrt(n))+1
         divisor_list = range(2,n+1)       
         
         next_prime_index = 0
         current_prime = divisor_list[0]
-        while current_prime < upper_bound and len(divisor_list) > next_prime_index:
+        while current_prime < n and len(divisor_list) > next_prime_index:
             # This loop eliminates every composite number between 2 and k
             current_prime = divisor_list[next_prime_index]
             divisor_list = [n for n in divisor_list if
@@ -63,7 +64,25 @@ class PrimeGenerators(object):
             next_prime_index = divisor_list.index(current_prime)+1
         return divisor_list
 
+    def get_prime_factors(self, n):
+        """
+            This method returns a list of the prime factors of the number n.
+        
+            As expected, any number that is less than 2 will return an empty list.
+        """
+        # First get all prime numbers between 2 and n, inclusive.
+        # This is emitted in order.
+        prime_factors = []
 
+        primes = self.erastosthenes(int(ceil(sqrt(n))))
+        for prime in primes:
+            if n % prime == 0:
+                prime_factors.append(prime)
+    
+        return prime_factors
+
+
+    
 if __name__ == '__main__':
     import sys
 
@@ -73,5 +92,6 @@ if __name__ == '__main__':
         n = int(sys.argv[1])
 
     generator = PrimeGenerators()
-    print generator.sundaram(n)
+    #print generator.sundaram(n)
     print generator.erastosthenes(n)
+    print generator.get_prime_factors(n)
