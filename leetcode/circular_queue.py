@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vim: fileencoding=utf-8 tabstop=4 expandtab shiftwidth=4
 
@@ -23,7 +23,7 @@ class MyCircularQueue:
         if not self.isFull():
             self.front_index = (self.front_index + 1) % self.max_size
             self.circular_queue[self.front_index] = value
-            self.current_size = self.current_size + 1
+            self.current_capacity = self.current_capacity + 1
             return True
         return False
 
@@ -34,7 +34,7 @@ class MyCircularQueue:
         """
         if not self.isEmpty():
             self.circular_queue[self.rear_index] = None
-            self.current_size = self.current_size - 1
+            self.current_capacity = self.current_capacity - 1
             self.rear_index = (self.rear_index + 1) % self.max_size
             return True
         return False
